@@ -727,8 +727,8 @@ pub fn power_up(path: impl AsRef<Path>) -> Box<Cartridge> {
         }
         n => panic!("Unsupported cartridge type: 0x{:02x}", n),
     };
-    cart.ensure_logo();
-    cart.ensure_header_checksum();
+    ensure_logo(cart.as_ref());
+    ensure_header_checksum(cart.as_ref());
     cart
 }
 
@@ -788,12 +788,38 @@ const NINTENDO_LOGO: [u8; 48] = [
     0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
 ];
 
+// Ensure Nintendo Logo.
+fn ensure_logo(cart: &Cartridge) {
+    for i in 0..48 {
+        if cart.get(0x0104 + i as u16) != NINTENDO_LOGO[i as usize] {
+            panic!("Nintendo logo is incorrect")
+        }
+    }
+}
+
+// In position 0x14d, contains an 8 bit checksum across the cartridge header bytes 0134-014C. The checksum is
+// calculated as follows:
+//
+//   x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
+//
+// The lower 8 bits of the result must be the same than the value in this entry. The GAME WON'T WORK if this
+// checksum is incorrect.
+fn ensure_header_checksum(cart: &Cartridge) {
+    let mut v: u8 = 0;
+    for i in 0x0134..0x014d {
+        v = v.wrapping_sub(cart.get(i)).wrapping_sub(1);
+    }
+    if cart.get(0x014d) != v {
+        panic!("Cartridge's header checksum is incorrect")
+    }
+}
+
 pub trait Cartridge: Memory + Stable + Send {
     // Title of the game in UPPER CASE ASCII. If it is less than 16 characters then the remaining bytes are filled with
     // 00's. When inventing the CGB, Nintendo has reduced the length of this area to 15 characters, and some months
     // later they had the fantastic idea to reduce it to 11 characters only. The new meaning of the ex-title bytes is
     // described below.
-    fn rom_name(&self) -> String {
+    fn title(&self) -> String {
         let mut buf = String::new();
         let ic = 0x0134;
         let oc = if self.get(0x0143) == 0x80 { 0x013e } else { 0x0143 };
@@ -804,32 +830,6 @@ pub trait Cartridge: Memory + Stable + Send {
             }
         }
         buf
-    }
-
-    // Ensure Nintendo Logo.
-    fn ensure_logo(&self) {
-        for i in 0..48 {
-            if self.get(0x0104 + i as u16) != NINTENDO_LOGO[i as usize] {
-                panic!("Nintendo logo is incorrect")
-            }
-        }
-    }
-
-    // In position 0x14d, contains an 8 bit checksum across the cartridge header bytes 0134-014C. The checksum is
-    // calculated as follows:
-    //
-    //   x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
-    //
-    // The lower 8 bits of the result must be the same than the value in this entry. The GAME WON'T WORK if this
-    // checksum is incorrect.
-    fn ensure_header_checksum(&self) {
-        let mut v: u8 = 0;
-        for i in 0x0134..0x014d {
-            v = v.wrapping_sub(self.get(i)).wrapping_sub(1);
-        }
-        if self.get(0x014d) != v {
-            panic!("Cartridge's header checksum is incorrect")
-        }
     }
 }
 

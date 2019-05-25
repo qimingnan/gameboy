@@ -37,7 +37,7 @@ fn main() {
     }
 
     let mut mother_board = MotherBoard::power_up(rom);
-    let rom_name = mother_board.mmu.cartridge.rom_name();
+    let rom_name = mother_board.mmu.cartridge.title();
 
     if c_audio {
         let player = CpalPlayer::get();
