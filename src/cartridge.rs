@@ -157,10 +157,13 @@ impl Memory for Mbc1 {
             0x2000...0x3fff => {
                 let n = (v & 0x1f) as usize;
                 let n = match n {
-                    0x00 => 1,
+                    0x00 => 0x01,
+                    0x20 => 0x21,
+                    0x40 => 0x41,
+                    0x60 => 0x61,
                     _ => n,
                 };
-                self.rom_bank = (self.rom_bank & 0xe0) | n;
+                self.rom_bank = n;
             }
             0x4000...0x5fff => {
                 let n = (v & 0x03) as usize;
@@ -652,6 +655,7 @@ impl Stable for HuC1 {
 //  12h  MBC3+RAM                 FEh  HuC3
 //  13h  MBC3+RAM+BATTERY         FFh  HuC1+RAM+BATTERY
 pub fn power_up(path: impl AsRef<Path>) -> Box<Cartridge> {
+    rog::debugln!("Loading cartridge from {:?}", path.as_ref());
     let mut f = File::open(path.as_ref()).unwrap();
     let mut rom = Vec::new();
     f.read_to_end(&mut rom).unwrap();
@@ -727,6 +731,8 @@ pub fn power_up(path: impl AsRef<Path>) -> Box<Cartridge> {
         }
         n => panic!("Unsupported cartridge type: 0x{:02x}", n),
     };
+    rog::debugln!("Cartridge name is {}", cart.title());
+    rog::debugln!("Cartridge type is {}", mbc_info(cart.get(0x0147)));
     ensure_logo(cart.as_ref());
     ensure_header_checksum(cart.as_ref());
     cart
@@ -775,6 +781,42 @@ fn ram_read(path: impl AsRef<Path>, size: usize) -> Vec<u8> {
         }
         Err(_) => vec![0; size],
     }
+}
+
+// Readable form of MBC representation
+fn mbc_info(b: u8) -> String {
+    String::from(match b {
+        0x00 => "ROM ONLY",
+        0x01 => "MBC1",
+        0x02 => "MBC1+RAM",
+        0x03 => "MBC1+RAM+BATTERY",
+        0x05 => "MBC2",
+        0x06 => "MBC2+BATTERY",
+        0x08 => "ROM+RAM",
+        0x09 => "ROM+RAM+BATTERY",
+        0x0b => "MMM01",
+        0x0c => "MMM01+RAM",
+        0x0d => "MMM01+RAM+BATTERY",
+        0x0f => "MBC3+TIMER+BATTERY",
+        0x10 => "MBC3+TIMER+RAM+BATTERY",
+        0x11 => "MBC3",
+        0x12 => "MBC3+RAM",
+        0x13 => "MBC3+RAM+BATTERY",
+        0x15 => "MBC4",
+        0x16 => "MBC4+RAM",
+        0x17 => "MBC4+RAM+BATTERY",
+        0x19 => "MBC5",
+        0x1a => "MBC5+RAM",
+        0x1b => "MBC5+RAM+BATTERY",
+        0x1c => "MBC5+RUMBLE",
+        0x1d => "MBC5+RUMBLE+RAM",
+        0x1e => "MBC5+RUMBLE+RAM+BATTERY",
+        0xfc => "POCKET CAMERA",
+        0xfd => "BANDAI TAMA5",
+        0xfe => "HuC3",
+        0x1f => "HuC1+RAM+BATTERY",
+        n => panic!("Unsupported cartridge type: 0x{:02x}", n),
+    })
 }
 
 // These bytes define the bitmap of the Nintendo logo that is displayed when the gameboy gets turned on.
