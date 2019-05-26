@@ -118,7 +118,7 @@ impl Mbc1 {
 impl Memory for Mbc1 {
     fn get(&self, a: u16) -> u8 {
         match a {
-            0x0000...0x3fff => *self.rom.get(a as usize).unwrap_or(&0),
+            0x0000...0x3fff => self.rom[a as usize],
             0x4000...0x7fff => {
                 let i = self.rom_bank * 0x4000 + a as usize - 0x4000;
                 self.rom[i]
@@ -235,7 +235,7 @@ impl Mbc2 {
 impl Memory for Mbc2 {
     fn get(&self, a: u16) -> u8 {
         match a {
-            0x0000...0x3fff => *self.rom.get(a as usize).unwrap_or(&0),
+            0x0000...0x3fff => self.rom[a as usize],
             0x4000...0x7fff => {
                 let i = self.rom_bank * 0x4000 + a as usize - 0x4000;
                 self.rom[i]
@@ -463,7 +463,7 @@ impl Mbc3 {
 impl Memory for Mbc3 {
     fn get(&self, a: u16) -> u8 {
         match a {
-            0x0000...0x3fff => *self.rom.get(a as usize).unwrap_or(&0),
+            0x0000...0x3fff => self.rom[a as usize],
             0x4000...0x7fff => {
                 let i = self.rom_bank * 0x4000 + a as usize - 0x4000;
                 self.rom[i]
@@ -559,7 +559,7 @@ impl Mbc5 {
 impl Memory for Mbc5 {
     fn get(&self, a: u16) -> u8 {
         match a {
-            0x0000...0x3fff => *self.rom.get(a as usize).unwrap_or(&0),
+            0x0000...0x3fff => self.rom[a as usize],
             0x4000...0x7fff => {
                 let i = self.rom_bank * 0x4000 + a as usize - 0x4000;
                 self.rom[i]
