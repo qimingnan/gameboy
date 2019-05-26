@@ -158,12 +158,9 @@ impl Memory for Mbc1 {
                 let n = (v & 0x1f) as usize;
                 let n = match n {
                     0x00 => 0x01,
-                    0x20 => 0x21,
-                    0x40 => 0x41,
-                    0x60 => 0x61,
                     _ => n,
                 };
-                self.rom_bank = n;
+                self.rom_bank = (self.rom_bank & 0x60) | n;
             }
             0x4000...0x5fff => {
                 let n = (v & 0x03) as usize;
@@ -173,8 +170,8 @@ impl Memory for Mbc1 {
                 }
             }
             0x6000...0x7fff => match v {
-                0 => self.bank_mode = BankMode::Rom,
-                1 => self.bank_mode = BankMode::Ram,
+                0x00 => self.bank_mode = BankMode::Rom,
+                0x01 => self.bank_mode = BankMode::Ram,
                 n => panic!("Invalid cartridge type {}", n),
             },
             _ => {}
