@@ -95,8 +95,7 @@ pub struct Mbc1 {
     rom: Vec<u8>,
     ram: Vec<u8>,
     bank_mode: BankMode, // MBC1 has two different maximum memory modes: 16Mbit ROM/8KByte RAM or 4Mbit ROM/32KByte RAM.
-    rom_bank: usize,
-    ram_bank: usize,
+    bank: u8,
     ram_enable: bool,
     sav_path: PathBuf,
 }
@@ -107,11 +106,26 @@ impl Mbc1 {
             rom,
             ram,
             bank_mode: BankMode::Rom, // The MBC1 defaults to 16Mbit ROM/8KByte RAM mode on power up.
-            rom_bank: 1,
-            ram_bank: 0,
+            bank: 0x01,
             ram_enable: false,
             sav_path: PathBuf::from(sav.as_ref()),
         }
+    }
+
+    fn rom_bank(&self) -> usize {
+        let n = match self.bank_mode {
+            BankMode::Rom => self.bank & 0x7f,
+            BankMode::Ram => self.bank & 0x1f,
+        };
+        n as usize
+    }
+
+    fn ram_bank(&self) -> usize {
+        let n = match self.bank_mode {
+            BankMode::Rom => 0x00,
+            BankMode::Ram => (self.bank & 0x60) >> 5,
+        };
+        n as usize
     }
 }
 
@@ -120,16 +134,12 @@ impl Memory for Mbc1 {
         match a {
             0x0000...0x3fff => self.rom[a as usize],
             0x4000...0x7fff => {
-                let i = self.rom_bank * 0x4000 + a as usize - 0x4000;
+                let i = self.rom_bank() * 0x4000 + a as usize - 0x4000;
                 self.rom[i]
             }
             0xa000...0xbfff => {
                 if self.ram_enable {
-                    let ram_bank = match self.bank_mode {
-                        BankMode::Rom => 0x00,
-                        BankMode::Ram => self.ram_bank,
-                    };
-                    let i = ram_bank * 0x2000 + a as usize - 0xa000;
+                    let i = self.ram_bank() * 0x2000 + a as usize - 0xa000;
                     self.ram[i]
                 } else {
                     0x00
@@ -143,11 +153,7 @@ impl Memory for Mbc1 {
         match a {
             0xa000...0xbfff => {
                 if self.ram_enable {
-                    let ram_bank = match self.bank_mode {
-                        BankMode::Rom => 0x00,
-                        BankMode::Ram => self.ram_bank,
-                    };
-                    let i = ram_bank * 0x2000 + a as usize - 0xa000;
+                    let i = self.ram_bank() * 0x2000 + a as usize - 0xa000;
                     self.ram[i] = v;
                 }
             }
@@ -155,19 +161,16 @@ impl Memory for Mbc1 {
                 self.ram_enable = v & 0x0f == 0x0a;
             }
             0x2000...0x3fff => {
-                let n = (v & 0x1f) as usize;
+                let n = v & 0x1f;
                 let n = match n {
                     0x00 => 0x01,
                     _ => n,
                 };
-                self.rom_bank = (self.rom_bank & 0x60) | n;
+                self.bank = (self.bank & 0x60) | n;
             }
             0x4000...0x5fff => {
-                let n = (v & 0x03) as usize;
-                match self.bank_mode {
-                    BankMode::Rom => self.rom_bank = (self.rom_bank & 0x1f) | (n << 5),
-                    BankMode::Ram => self.ram_bank = n as usize,
-                }
+                let n = v & 0x03;
+                self.bank = self.bank & 0x9f | (n << 5)
             }
             0x6000...0x7fff => match v {
                 0x00 => self.bank_mode = BankMode::Rom,
