@@ -255,21 +255,22 @@ impl Memory for Mbc2 {
     }
 
     fn set(&mut self, a: u16, v: u8) {
+        // Only the lower 4 bits of the "bytes" in this memory area are used.
+        let v = v & 0x0f;
         match a {
             0xa000...0xa1ff => {
                 if self.ram_enable {
-                    // Only the lower 4 bits of the "bytes" in this memory area are used.
-                    self.ram[(a - 0xa000) as usize] = v & 0x0f
+                    self.ram[(a - 0xa000) as usize] = v
                 }
             }
             0x0000...0x1fff => {
                 if a & 0x0100 == 0 {
-                    self.ram_enable = v & 0x0f == 0x0a;
+                    self.ram_enable = v == 0x0a;
                 }
             }
             0x2000...0x3fff => {
                 if a & 0x0100 != 0 {
-                    self.rom_bank = (v & 0x0f) as usize;
+                    self.rom_bank = v as usize;
                 }
             }
             _ => {}
