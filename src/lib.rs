@@ -1,3 +1,4 @@
+pub mod bit;
 pub mod cartridge;
 pub mod convention;
 pub mod cpu;

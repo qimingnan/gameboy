@@ -258,16 +258,17 @@ impl Memory for Mbc2 {
         match a {
             0xa000...0xa1ff => {
                 if self.ram_enable {
-                    self.ram[(a - 0xa000) as usize] = v
+                    // Only the lower 4 bits of the "bytes" in this memory area are used.
+                    self.ram[(a - 0xa000) as usize] = v & 0x0f
                 }
             }
             0x0000...0x1fff => {
-                if (a >> 8) & 0x01 == 0 {
-                    self.ram_enable = !self.ram_enable
+                if a & 0x0100 == 0 {
+                    self.ram_enable = v & 0x0f == 0x0a;
                 }
             }
             0x2000...0x3fff => {
-                if (a >> 8) & 0x01 == 1 {
+                if a & 0x0100 != 0 {
                     self.rom_bank = (v & 0x0f) as usize;
                 }
             }
