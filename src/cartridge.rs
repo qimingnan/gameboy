@@ -159,6 +159,9 @@ impl Memory for Mbc1 {
             }
             0x0000...0x1fff => {
                 self.ram_enable = v & 0x0f == 0x0a;
+                if !self.ram_enable {
+                    self.sav();
+                }
             }
             0x2000...0x3fff => {
                 let n = v & 0x1f;
@@ -184,6 +187,7 @@ impl Memory for Mbc1 {
 
 impl Stable for Mbc1 {
     fn sav(&self) {
+        rog::debugln!("Ram is being persisted");
         if self.sav_path.to_str().unwrap().is_empty() {
             return;
         }
@@ -266,6 +270,9 @@ impl Memory for Mbc2 {
             0x0000...0x1fff => {
                 if a & 0x0100 == 0 {
                     self.ram_enable = v == 0x0a;
+                    if !self.ram_enable {
+                        self.sav();
+                    }
                 }
             }
             0x2000...0x3fff => {
@@ -280,6 +287,7 @@ impl Memory for Mbc2 {
 
 impl Stable for Mbc2 {
     fn sav(&self) {
+        rog::debugln!("Ram is being persisted");
         if self.sav_path.to_str().unwrap().is_empty() {
             return;
         }
@@ -503,6 +511,9 @@ impl Memory for Mbc3 {
             }
             0x0000...0x1fff => {
                 self.ram_enable = v & 0x0f == 0x0a;
+                if !self.ram_enable {
+                    self.sav();
+                }
             }
             0x2000...0x3fff => {
                 let n = (v & 0x7f) as usize;
@@ -529,6 +540,7 @@ impl Memory for Mbc3 {
 
 impl Stable for Mbc3 {
     fn sav(&self) {
+        rog::debugln!("Ram is being persisted");
         self.rtc.sav();
         if self.sav_path.to_str().unwrap().is_empty() {
             return;
@@ -591,6 +603,9 @@ impl Memory for Mbc5 {
             }
             0x0000...0x1fff => {
                 self.ram_enable = v & 0x0f == 0x0a;
+                if !self.ram_enable {
+                    self.sav();
+                }
             }
             0x2000...0x2fff => self.rom_bank = (self.rom_bank & 0x100) | (v as usize),
             0x3000...0x3fff => self.rom_bank = (self.rom_bank & 0x0FF) | (((v & 0x01) as usize) << 8),
@@ -602,6 +617,7 @@ impl Memory for Mbc5 {
 
 impl Stable for Mbc5 {
     fn sav(&self) {
+        rog::debugln!("Ram is being persisted");
         if self.sav_path.to_str().unwrap().is_empty() {
             return;
         }

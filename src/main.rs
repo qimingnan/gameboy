@@ -267,8 +267,6 @@ fn run_cpu(mut cpu: MotherBoard, sender: SyncSender<Vec<u8>>, receiver: Receiver
             let _ = periodic.recv();
         }
     }
-
-    cpu.mmu.cartridge.sav();
 }
 
 fn timer_periodic(ms: u64) -> Receiver<()> {
