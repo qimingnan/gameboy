@@ -22,7 +22,7 @@ enum GBEvent {
 }
 
 fn main() {
-    rog::reg(vec!["gameboy::cartridge"]);
+    rog::reg("gameboy::cartridge");
     let mut rom = String::from("");
     let mut c_audio = false;
     let mut c_scale = 2;
